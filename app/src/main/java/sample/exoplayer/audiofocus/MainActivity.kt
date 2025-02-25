@@ -29,6 +29,7 @@ class MainActivity : AppCompatActivity() {
         val playerView = findViewById<PlayerView>(R.id.player)
 
         val buttonPlayAudio = findViewById<Button>(R.id.btnPlayAudio)
+        val buttonPlayAnotherAudio = findViewById<Button>(R.id.btnPlayAnotherAudio)
         val buttonPlayVideo = findViewById<Button>(R.id.btnPlayVideo)
 
         val audioPlayer = ExoPlayer.Builder(this).build().apply {
@@ -41,6 +42,17 @@ class MainActivity : AppCompatActivity() {
             )
             addListener(LogListener("AudioPlayer"))
         }
+        val anotherAudioPlayer = ExoPlayer.Builder(this).build().apply {
+            setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setUsage(C.USAGE_MEDIA)
+                    .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
+                    .build(),
+                true
+            )
+            addListener(LogListener("AnotherAudioPlayer"))
+        }
+
         val videoPlayer = ExoPlayer.Builder(this).build().apply {
             setAudioAttributes(
                 AudioAttributes.Builder()
@@ -54,10 +66,20 @@ class MainActivity : AppCompatActivity() {
 
         val uriBasePath = "file:///android_asset"
         val sampleAudio = "$uriBasePath/sample_audio.mp3".toUri()
+        val sampleAudio2 = "$uriBasePath/sample_audio_2.mp3".toUri()
         val sampleVideo = "$uriBasePath/sample_video.mp4".toUri()
 
         buttonPlayAudio.setOnClickListener {
             val mediaItem = MediaItem.fromUri(sampleAudio)
+            audioPlayer.run {
+                setMediaItem(mediaItem)
+                prepare()
+                play()
+            }
+        }
+
+        buttonPlayAnotherAudio.setOnClickListener {
+            val mediaItem = MediaItem.fromUri(sampleAudio2)
             audioPlayer.run {
                 setMediaItem(mediaItem)
                 prepare()
