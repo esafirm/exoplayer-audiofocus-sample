@@ -1,5 +1,6 @@
 package sample.exoplayer.audiofocus
 
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import androidx.activity.enableEdgeToEdge
@@ -31,6 +32,7 @@ class MainActivity : AppCompatActivity() {
         val buttonPlayAudio = findViewById<Button>(R.id.btnPlayAudio)
         val buttonPlayAnotherAudio = findViewById<Button>(R.id.btnPlayAnotherAudio)
         val buttonPlayVideo = findViewById<Button>(R.id.btnPlayVideo)
+        val buttonMultiTrack = findViewById<Button>(R.id.btnMultiTrack)
 
         val audioPlayer = ExoPlayer.Builder(this).build().apply {
             setAudioAttributes(
@@ -96,6 +98,10 @@ class MainActivity : AppCompatActivity() {
                 prepare()
                 play()
             }
+        }
+
+        buttonMultiTrack.setOnClickListener {
+            startActivity(Intent(this, MultiTrackActivity::class.java))
         }
     }
 
