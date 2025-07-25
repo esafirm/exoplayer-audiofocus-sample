@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.net.toUri
 import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
 import androidx.media3.common.util.Clock
 import androidx.media3.common.util.UnstableApi
@@ -52,6 +53,33 @@ class MultiTrackActivity : ComponentActivity() {
             } else {
                 null
             }
+        }
+
+        override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+            player2.playWhenReady = playWhenReady
+        }
+
+        override fun onPlaybackStateChanged(playbackState: Int) {
+            if (playbackState == Player.STATE_READY) {
+                player2.playbackParameters = PlaybackParameters(
+                    player1.playbackParameters.speed,
+                    player1.playbackParameters.pitch
+                )
+                player2.seekTo(player1.currentPosition)
+            }
+        }
+
+        override fun onPositionDiscontinuity(
+            oldPosition: Player.PositionInfo,
+            newPosition: Player.PositionInfo,
+            reason: Int
+        ) {
+            if (oldPosition.mediaItemIndex == newPosition.mediaItemIndex) return
+            player2.seekTo(newPosition.mediaItemIndex, newPosition.positionMs)
+        }
+
+        override fun onPlaybackParametersChanged(playbackParameters: PlaybackParameters) {
+            player2.playbackParameters = playbackParameters
         }
     }
 
