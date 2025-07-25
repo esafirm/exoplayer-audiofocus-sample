@@ -1,6 +1,8 @@
 package sample.exoplayer.audiofocus
 
+import android.content.Context
 import android.os.Bundle
+import android.os.Handler
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.OptIn
@@ -25,16 +27,25 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.net.toUri
+import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
-import androidx.media3.common.util.Clock
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultDataSource
+import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.Renderer
+import androidx.media3.exoplayer.audio.AudioRendererEventListener
+import androidx.media3.exoplayer.audio.AudioSink
+import androidx.media3.exoplayer.audio.MediaCodecAudioRenderer
+import androidx.media3.exoplayer.mediacodec.MediaCodecSelector
 import androidx.media3.exoplayer.source.ProgressiveMediaSource
 import androidx.media3.exoplayer.source.SilenceMediaSource
 import androidx.media3.ui.PlayerView
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(UnstableApi::class)
 class MultiTrackActivity : ComponentActivity() {
@@ -65,7 +76,7 @@ class MultiTrackActivity : ComponentActivity() {
                     player1.playbackParameters.speed,
                     player1.playbackParameters.pitch
                 )
-                player2.seekTo(player1.currentPosition)
+//                player2.seekTo(player1.currentPosition)
             }
         }
 
@@ -75,7 +86,7 @@ class MultiTrackActivity : ComponentActivity() {
             reason: Int
         ) {
             if (oldPosition.mediaItemIndex == newPosition.mediaItemIndex) return
-            player2.seekTo(newPosition.mediaItemIndex, newPosition.positionMs)
+//            player2.seekTo(newPosition.mediaItemIndex, newPosition.positionMs)
         }
 
         override fun onPlaybackParametersChanged(playbackParameters: PlaybackParameters) {
@@ -106,19 +117,52 @@ class MultiTrackActivity : ComponentActivity() {
     }
 
     private fun setupPlayers() {
-        val mediaClock = Clock.DEFAULT
-        player1 = ExoPlayer.Builder(this).setClock(mediaClock).build()
-        player2 = ExoPlayer.Builder(this).setClock(mediaClock).build()
+        player1 = ExoPlayer.Builder(this).build()
+
+        var currentPositionHolder: Long = player1.currentPosition
+        lifecycleScope.launch {
+            while (true) {
+                delay(200.milliseconds)
+                currentPositionHolder = player1.currentPosition
+            }
+        }
+
+        val renderersFactory = object : DefaultRenderersFactory(this) {
+            override fun buildAudioRenderers(
+                context: Context,
+                extensionRendererMode: Int,
+                mediaCodecSelector: MediaCodecSelector,
+                enableDecoderFallback: Boolean,
+                audioSink: AudioSink,
+                eventHandler: Handler,
+                eventListener: AudioRendererEventListener,
+                out: ArrayList<Renderer>
+            ) {
+                out.add(
+                    MediaCodecAudioRendererWithClock(
+                        context,
+                        mediaCodecSelector,
+                        enableDecoderFallback,
+                        audioSink,
+                        eventHandler,
+                        eventListener,
+                        getPositionUs = { currentPositionHolder }
+                    )
+                )
+            }
+        }
+
+        player2 = ExoPlayer.Builder(this).setRenderersFactory(renderersFactory).build()
     }
 
     private fun onTrackSelected(track: Int) {
         this.activeTrack = track
         if (track == 1) {
-            player2.seekTo(player1.currentPosition)
+//            player2.seekTo(player1.currentPosition)
             player1.volume = 1f
             player2.volume = 0f
         } else {
-            player1.seekTo(player2.currentPosition)
+//            player1.seekTo(player2.currentPosition)
             player1.volume = 0f
             player2.volume = 1f
         }
